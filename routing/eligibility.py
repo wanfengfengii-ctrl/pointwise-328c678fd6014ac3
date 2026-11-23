@@ -24,12 +24,13 @@ def build_eligible_network(request: RouteRequest) -> EligibleNetwork:
     for package in request.selection.packages:
         views = {view.notice_id: view for view in package.views}
         selected_views.append((package.tile_id, views.get(request.notice_id, views[None])))
+    # A portal closed by any selected piece is closed for the whole journey,
+    # including start, end and same-tile passage in every other tile.
     closed_portals = frozenset(portal for _, view in selected_views for portal in view.closed_portals)
     edges = defaultdict(list)
     for tile_id, view in selected_views:
-        local_closed = frozenset(view.closed_portals)
         for transfer in view.transfers:
-            if local_closed.isdisjoint(transfer.portals):
+            if closed_portals.isdisjoint(transfer.portals):
                 origin = network_node(tile_id, transfer.start)
                 target = network_node(tile_id, transfer.end)
                 edges[origin].append(Connection(target, transfer.minutes, transfer.portals))

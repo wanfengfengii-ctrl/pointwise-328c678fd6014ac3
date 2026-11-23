@@ -2,10 +2,11 @@ import sqlite3
 
 from closures.notices import record
 from closures.targets import ClosureTargets
+from issue.cli import record_file
 from routing.history import read
 from routing.requests import Location
 from routing.search import RouteResult
-from tests.fixtures import HandoffFixture
+from tests.fixtures import HandoffFixture, SAMPLES
 
 
 class RouteTests(HandoffFixture):
@@ -117,6 +118,28 @@ class RouteTests(HandoffFixture):
         for args in ({'start': p}, {'end': p}, {'start': p, 'end': p}):
             with self.subTest(args=args):
                 self.assertEqual(self.dispatch(ids, 'F', **args).result, RouteResult(None, ()))
+
+    def test_remote_closure_blocks_same_tile_passage_elsewhere(self):
+        # A portal closed by one selected piece must block passage through that
+        # portal inside every other tile too, not only inside the declaring tile.
+        west = self.publish(self.register_sample('west-5.json'))
+        survey = self.sample('east.json')
+        survey['segments'].append(
+            {'id': 'east-p-q', 'start': 'east-private-p', 'end': 'east-private-q', 'minutes': 4}
+        )
+        east_revision = self.register_survey(survey)
+        record_file(self.revisions, self.notices, east_revision, SAMPLES / 'east-f.json')
+        east = self.publish(east_revision)
+        self.disconnect_source()
+        # Without F, east may travel P->Q->T: west 2 plus east 4+1.
+        self.assertEqual(
+            self.dispatch((west, east)).result, RouteResult(3, ('P', 'Q'))
+        )
+        # With F, P is closed journey-wide; east cannot enter P and west must
+        # use its bypass: west 5 plus the open east Q->T leg of 1.
+        self.assertEqual(
+            self.dispatch((west, east), 'F').result, RouteResult(6, ('Q',))
+        )
 
     def test_duplicate_tile_or_unknown_location_never_signs(self):
         west_5 = self.publish(self.register_sample('west-5.json'))

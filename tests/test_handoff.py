@@ -66,6 +66,30 @@ class IntakeTests(HandoffFixture):
         self.assertEqual(selection.packages[0].revision_id, old_revision)
         self.assertEqual(selection.packages[0].raw, old.raw)
 
+    def test_piece_keeps_every_portal_set_alternative(self):
+        # The offline piece cannot contain private nodes, so the source must
+        # emit both shortest paths between the same public boundary when they
+        # traverse different shared portals. Keeping only the shortest one
+        # would erase the bypass needed after another tile closes a portal.
+        piece = self.issue_piece(self.register_sample('west-5.json'))
+        body = decode_package(piece.raw).body
+        ordinary = next(view for view in body['views'] if view['notice'] is None)
+        s_to_q = {
+            tuple(transfer['portals']): transfer['minutes']
+            for transfer in ordinary['transfers']
+            if transfer['start'] == ['site', 'S'] and transfer['end'] == ['portal', 'Q']
+        }
+        self.assertEqual(s_to_q, {('P', 'Q'): 2, ('Q',): 5})
+        piece_7 = self.issue_piece(self.register_sample('west-7.json'))
+        body_7 = decode_package(piece_7.raw).body
+        ordinary_7 = next(view for view in body_7['views'] if view['notice'] is None)
+        s_to_q_7 = {
+            tuple(transfer['portals']): transfer['minutes']
+            for transfer in ordinary_7['transfers']
+            if transfer['start'] == ['site', 'S'] and transfer['end'] == ['portal', 'Q']
+        }
+        self.assertEqual(s_to_q_7, {('P', 'Q'): 2, ('Q',): 7})
+
     def test_private_graph_stays(self):
         revision_id = self.register_sample('west-5.json')
         revision = self.revisions.get(revision_id)
