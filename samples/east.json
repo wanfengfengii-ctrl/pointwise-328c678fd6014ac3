@@ -1,0 +1,10 @@
+{
+  "round": "day-1",
+  "tile": "east",
+  "nodes": ["east-private-p", "east-private-q", "east-private-t"],
+  "segments": [
+    {"id": "east-out", "start": "east-private-q", "end": "east-private-t", "minutes": 1}
+  ],
+  "portals": {"P": "east-private-p", "Q": "east-private-q"},
+  "endpoints": {"T": "east-private-t"}
+}

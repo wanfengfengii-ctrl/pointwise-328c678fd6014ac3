@@ -1,0 +1,13 @@
+{
+  "round": "day-1",
+  "tile": "west",
+  "nodes": ["west-private-s", "west-private-p", "west-private-q", "west-private-a"],
+  "segments": [
+    {"id": "west-in-p", "start": "west-private-s", "end": "west-private-p", "minutes": 1},
+    {"id": "west-p-q", "start": "west-private-p", "end": "west-private-q", "minutes": 1},
+    {"id": "west-by-a", "start": "west-private-s", "end": "west-private-a", "minutes": 2},
+    {"id": "west-a-q", "start": "west-private-a", "end": "west-private-q", "minutes": 5}
+  ],
+  "portals": {"P": "west-private-p", "Q": "west-private-q"},
+  "endpoints": {"S": "west-private-s"}
+}
